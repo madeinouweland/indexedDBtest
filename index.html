@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>indexedDB test</title>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <h1>indexedDB Test (open the console to see results)</h1>
+  <button onclick="openDB()">Open database</button>
+  <button onclick="save()">Save random text</button>
+  <button onclick="list()">List data</button>
+  <button onclick="closeDB()">Close database</button>
+
+  <script>
+
+  if (window.indexedDB) {
+    console.log('Browser supports IndexedDB');
+  } else {
+    console.log('Browser does not support IndexedDB');
+  }
+
+  let db;
+
+  function openDB() {
+    let request = window.indexedDB.open('text-writer', 6);
+
+    // onupgradeneeded fires when database does not exist or version number is newer
+    request.onupgradeneeded = (e) => {
+      console.log("onupgradeneeded");
+      let db = e.target.result;
+      console.log("created or upgraded database " + db.name + ", version: " + db.version);
+      let store = db.createObjectStore("story", { keyPath: "id" });
+      console.log(store);
+    }
+
+    // happens after onupgradeneeded (if needed) and database was openened.
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      console.log("Database opened", db);
+
+      db.onerror = (e) => {
+        console.log("Error: "+ e.target.errorCode);
+      };
+    };
+  }
+
+  function save() {
+    var transaction = db.transaction("story", "readwrite");
+    var store = transaction.objectStore("story");
+    var t = Math.floor((Math.random() * 100) + 1);
+    var query = store.put({ id: t, text: t});
+    query.onsuccess = (e) => console.log("Saved",e);
+  }
+
+  function list() {
+    var transaction = db.transaction("story", "readonly");
+    var store = transaction.objectStore("story");
+    let query = store.getAll();
+    query.onsuccess = (e) => {
+      console.log(e.target);
+      e.target.result.forEach(x => console.log(x));
+    }
+  }
+
+  function closeDB(){
+    db.close();
+    console.log("closed ", db);
+  }
+
+  </script>
+</body>
+</html>
